@@ -6,3 +6,8 @@ services:
     envVars:
       - key: PORT
         value: "10000"
+      # Origem do frontend publicado no GitHub Pages (ex.: https://arthurabelo.github.io).
+      # sync: false => valor definido manualmente no painel do Render, pois depende
+      # do domínio final do site (sem caminho do repositório e sem barra final).
+      - key: FRONTEND_ORIGIN
+        sync: false

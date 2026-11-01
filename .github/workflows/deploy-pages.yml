@@ -1,0 +1,78 @@
+name: Deploy frontend (GitHub Pages)
+
+# Publica o conteúdo estático de frontend/ no GitHub Pages.
+# A API continua no Render: ver docs/implantacao.md.
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: "URL HTTPS da API no Render (vazio = usar a variável PUBLIC_API_URL)"
+        required: false
+        type: string
+
+# Permissões exigidas pelo deployment via GitHub Actions.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Um deploy por vez; não cancela uma publicação em andamento.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # O ambiente github-pages, criado pelo GitHub, aceita deployments apenas
+    # a partir da branch padrão (ou de branches liberadas nas suas regras).
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Gerar config.js com a URL da API
+        env:
+          API_URL: ${{ inputs.api_url || vars.PUBLIC_API_URL }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from urllib.parse import urlparse
+
+          url = os.environ.get("API_URL", "").strip().rstrip("/")
+          parsed = urlparse(url)
+          if parsed.scheme != "https" or not parsed.netloc or " " in url:
+              raise SystemExit(
+                  "Configure a variável de repositório PUBLIC_API_URL (ou informe "
+                  "api_url ao disparar o workflow manualmente) com a URL HTTPS da "
+                  "API no Render, por exemplo https://esqueceram-ai-api.onrender.com"
+              )
+          Path("frontend/config.js").write_text(
+              "// Gerado automaticamente pelo workflow deploy-pages.yml. Não editar.\n"
+              f"window.API_URL = {json.dumps(url)};\n",
+              encoding="utf-8",
+          )
+          print(f"API_URL usada no deploy: {url}")
+          PY
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Empacotar o site estático
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend
+
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -107,8 +107,9 @@ docker compose up --build
 | `POSTGRES_DB`     | `esqueceram`                       | serviço `db`                  |
 
 > Esses valores existem apenas para o desenvolvimento local e não devem ser
-> usados em produção. Veja a Wiki do projeto, página "Tabela de Variáveis de
-> Produção", para o mapeamento das variáveis reais.
+> usados em produção. Veja [docs/implantacao.md](implantacao.md) (GitHub Pages +
+> Render) e a Wiki do projeto, página "Tabela de Variáveis de Produção", para
+> o mapeamento das variáveis reais.
 
 ## Solução de problemas
 

@@ -185,6 +185,27 @@ Uma implementação concluída deve retornar `201 Created` para um cadastro
 válido e respostas de erro apropriadas para dados inválidos ou imagens não
 aceitas.
 
+## Publicação (produção)
+
+O projeto usa serviços gratuitos separados para cada camada:
+
+| Camada | Serviço | Como é publicada |
+| ------ | ------- | ---------------- |
+| Frontend estático (`frontend/`) | GitHub Pages | Workflow `.github/workflows/deploy-pages.yml`, a partir da pasta `frontend/` |
+| API Flask (`backend/`) | Render | Blueprint `render.yaml` com `backend/Dockerfile` |
+| PostgreSQL e imagens | Serviços gerenciados | Variáveis de ambiente (`DATABASE_URL`, `SUPABASE_*`) no Render |
+
+Como o GitHub Pages serve somente arquivos estáticos, a URL da API é gravada
+em `frontend/config.js` durante o deploy, a partir da variável de repositório
+`PUBLIC_API_URL` (ex.: `https://sua-api.onrender.com`). No Render, defina
+`FRONTEND_ORIGIN` com a origem do site no Pages (ex.:
+`https://<dono>.github.io`), sem o caminho do repositório e sem barra final,
+para liberar o CORS de `/api/*`.
+
+O passo a passo completo está em
+[docs/implantacao.md](docs/implantacao.md); o ambiente de desenvolvimento
+continua descrito em [docs/ambiente-local.md](docs/ambiente-local.md).
+
 ## Branches e contribuição
 
 O fluxo de branches, commits e Pull Requests está documentado em
@@ -196,6 +217,7 @@ específica para cada tarefa e abra um Pull Request direcionado para `dev`.
 ## Documentação adicional
 
 - [Ambiente local com Docker Compose](docs/ambiente-local.md);
+- [Implantação em produção — GitHub Pages + Render](docs/implantacao.md);
 - [Wiki do projeto](https://github.com/ES2-UFPI/EsqueceramAI/wiki);
 - [MVP e implantação gratuita](https://github.com/ES2-UFPI/EsqueceramAI/wiki/MVP-e-Implanta%C3%A7%C3%A3o-Gratuita);
 - [Definição tecnológica](https://github.com/ES2-UFPI/EsqueceramAI/wiki/Defini%C3%A7%C3%A3o-Tecnol%C3%B3gica);
