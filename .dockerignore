@@ -1,0 +1,20 @@
+# Mantem o contexto de build (raiz do repositorio) enxuto.
+# O Dockerfile do backend usa apenas a pasta backend/.
+.git
+.github
+.venv
+__pycache__
+*.py[cod]
+.pytest_cache
+docs
+frontend
+*.md
+LICENSE
+render.yaml
+docker-compose.yaml
+.env
+**/.env
+**/.env.*
+!**/.env.example
+firebase-service-account.json
+service-account.json

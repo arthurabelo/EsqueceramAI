@@ -1,0 +1,94 @@
+# Ambiente local do Esqueceram AI (issue #54)
+#
+# Servicos:
+#   api      -> API Flask/Gunicorn construida a partir de backend/Dockerfile
+#   db       -> PostgreSQL 16 (postgres:16-alpine) para desenvolvimento local
+#   frontend -> Nginx (nginx:alpine) servindo o frontend estatico
+#
+# Uso:
+#   docker compose up --build        # sobe tudo em primeiro plano
+#   docker compose up --build -d     # sobe tudo em segundo plano
+#   docker compose down              # encerra os servicos
+#   docker compose down -v           # encerra e APAGA os dados do PostgreSQL
+#
+# Documentacao completa: docs/ambiente-local.md
+
+services:
+  # API disponivel em http://localhost:5000 (health check em /api/health).
+  # O container escuta na porta 10000 (convencao do Dockerfile para o Render,
+  # que usa porta 10000); a porta 5000 e a exposta na maquina local.
+  api:
+    build:
+      # O contexto de build e a raiz do repositorio porque o Dockerfile copia
+      # os arquivos a partir da subpasta "backend/" (mesmo contexto do Render).
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "5000:10000"
+    environment:
+      # Comunicacao API <-> banco: o hostname "db" e o nome do servico abaixo,
+      # resolvido pela rede padrao do Compose.
+      DATABASE_URL: "postgresql://esqueceram_ai:esqueceram_ai@db:5432/esqueceram_ai"
+      # O CORS da API aceita requisicoes vindas do frontend em http://localhost:8080.
+      FRONTEND_ORIGIN: "http://localhost:8080"
+    depends_on:
+      db:
+        # A API so inicia depois que o banco passar no healthcheck (pg_isready).
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:10000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # PostgreSQL para desenvolvimento local (Tarefa Tecnica: imagem postgres:16-alpine).
+  # Os dados persistem no volume nomeado "pgdata" entre execucoes.
+  db:
+    image: postgres:16-alpine
+    environment:
+      # Credenciais SOMENTE para desenvolvimento local — nunca usar em producao.
+      POSTGRES_USER: "esqueceram_ai"
+      POSTGRES_PASSWORD: "esqueceram_ai"
+      POSTGRES_DB: "esqueceram_ai"
+    volumes:
+      # Persistencia dos dados do PostgreSQL em volume Docker.
+      - pgdata:/var/lib/postgresql/data
+      # Na primeira subida, o schema de backend/sql/schema.sql e aplicado
+      # automaticamente pelo docker-entrypoint-initdb.d.
+      - ./backend/sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # Validacao da disponibilidade do PostgreSQL.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # Acesso opcional ao banco a partir da maquina (psql, DBeaver etc.).
+    # Descomente as linhas abaixo se quiser conectar em localhost:5432
+    # (nao recomendado se ja existir um PostgreSQL local na porta 5432).
+    # ports:
+    #   - "5432:5432"
+
+  # Frontend disponivel em http://localhost:8080.
+  # Nginx servindo os arquivos estaticos de ./frontend.
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      api:
+        condition: service_healthy
+
+# Rede padrao do Compose: todos os servicos ficam conectados a ela e se
+# comunicam pelos nomes dos servicos (api, db, frontend), que funcionam como
+# nomes de host dentro da rede.
+networks:
+  default:
+    driver: bridge
+
+# Volume nomeado que persiste os dados do PostgreSQL.
+volumes:
+  pgdata:
