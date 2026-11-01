@@ -6,9 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PORT=10000
 
-COPY app.py .
-
-# CORREÇÃO: Aponta para o caminho correto dentro do subdiretório backend
+# O contexto de build é a RAIZ do repositório (ver render.yaml: dockerContext: .),
+# então os caminhos de origem são prefixados com "backend/".
+# CORREÇÃO: removido "COPY app.py ." — não existe app.py na raiz do contexto.
 COPY backend/requirements.txt .
 RUN python -m pip install --no-cache-dir --upgrade pip && \
     python -m pip install --no-cache-dir -r requirements.txt
