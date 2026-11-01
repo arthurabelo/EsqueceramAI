@@ -57,6 +57,26 @@ git clone https://github.com/ES2-UFPI/EsqueceramAI.git
 Set-Location .\EsqueceramAI
 ```
 
+## Ambiente local com Docker Compose
+
+A forma recomendada e reproduzível de rodar o projeto localmente (frontend,
+API e PostgreSQL) é o Docker Compose, definido em
+[docker-compose.yaml](docker-compose.yaml) na raiz do repositório:
+
+```bash
+docker compose up --build
+```
+
+- API disponível em <http://localhost:5000> (health check em `/api/health`);
+- Frontend disponível em <http://localhost:8080>;
+- PostgreSQL (`postgres:16-alpine`) com dados persistidos no volume `pgdata`
+  e healthcheck via `pg_isready`; a API só inicia após o banco ficar saudável;
+- Encerrar os serviços com `docker compose down` (adicionar `-v` para apagar
+  os dados do banco).
+
+O passo a passo completo, incluindo validação e solução de problemas, está em
+[docs/ambiente-local.md](docs/ambiente-local.md).
+
 ## Criar o ambiente virtual
 
 O ambiente virtual mantém as dependências do projeto isoladas das bibliotecas
@@ -175,6 +195,7 @@ específica para cada tarefa e abra um Pull Request direcionado para `dev`.
 
 ## Documentação adicional
 
+- [Ambiente local com Docker Compose](docs/ambiente-local.md);
 - [Wiki do projeto](https://github.com/ES2-UFPI/EsqueceramAI/wiki);
 - [MVP e implantação gratuita](https://github.com/ES2-UFPI/EsqueceramAI/wiki/MVP-e-Implanta%C3%A7%C3%A3o-Gratuita);
 - [Definição tecnológica](https://github.com/ES2-UFPI/EsqueceramAI/wiki/Defini%C3%A7%C3%A3o-Tecnol%C3%B3gica);
