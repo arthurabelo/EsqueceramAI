@@ -1,0 +1,57 @@
+services:
+  # API Flask (Gunicorn) construída a partir do Dockerfile do backend.
+  # O contexto de build é a raiz do repositório, pois o Dockerfile copia
+  # os arquivos a partir da subpasta "backend/" (mesmo contexto usado no Render).
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: esqueceram-ai-api
+    environment:
+      PORT: "5000"
+      FRONTEND_ORIGIN: "http://localhost:8080"
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/esqueceram"
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        # A API só inicia depois que o banco passar no healthcheck.
+        condition: service_healthy
+    restart: unless-stopped
+
+  # PostgreSQL para desenvolvimento local.
+  # Os dados persistem no volume "pgdata" entre as execuções.
+  db:
+    image: postgres:16-alpine
+    container_name: esqueceram-ai-db
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "esqueceram"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d esqueceram"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  # Frontend estático servido pelo Nginx.
+  # Também faz proxy de "/api/" para o serviço "api" (mesma origem).
+  frontend:
+    image: nginx:alpine
+    container_name: esqueceram-ai-frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+# Volume nomeado para persistir os dados do PostgreSQL.
+volumes:
+  pgdata:

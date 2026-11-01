@@ -1,0 +1,13 @@
+# Ignorado no build da API (contexto = raiz do repositório)
+.git
+.github
+docs
+frontend
+docker
+*.md
+render.yaml
+backend/.env
+backend/tests
+backend/.venv
+**/__pycache__
+**/*.py[cod]
